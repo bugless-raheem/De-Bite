@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "De•Bite Restaurant Ordering"
+description = "A premium responsive restaurant ordering website for De•Bite in Lagos, with menu customization, cart checkout, WhatsApp ordering, order tracking, FAQs, and restaurant information."
+version = "1.0.0"
+id = "artifacts/debite"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18105
+
+[services.development]
+run = "pnpm --filter @workspace/debite run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/debite", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/debite/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18105"
+BASE_PATH = "/"

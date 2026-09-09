@@ -1,0 +1,3 @@
+- [OpenAPI numeric compatibility](debite-openapi-zod.md) — generated integer schemas currently conflict with the workspace Zod runtime; use bounded numbers unless upgraded together.
+- [Order source alignment](order-source-alignment.md) — customer tracking and admin operations must account for both the workspace order store and legacy Supabase orders.
+- [Supabase order item JSON](supabase-order-items.md) — normalize customizations because Supabase may return the JSONB value as an object or a JSON string.
