@@ -25,6 +25,7 @@ import type {
   AdminOrder,
   AdminOrderStatusInput,
   AdminSession,
+  CancelOrderInput,
   ErrorResponse,
   HealthStatus,
   MenuAvailabilityInput,
@@ -508,6 +509,77 @@ export const useTrackOrder = <TError = ErrorType<NotFoundResponse>,
         TContext
       > => {
       return useMutation(getTrackOrderMutationOptions(options));
+    }
+
+export const getCancelOrderUrl = () => {
+
+
+
+
+  return `/api/orders/cancel`
+}
+
+/**
+ * @summary Cancel an order before the kitchen starts preparing it
+ */
+export const cancelOrder = async (cancelOrderInput: CancelOrderInput, options?: Parameters<typeof customFetch>[1]): Promise<Order> => {
+
+  return customFetch<Order>(getCancelOrderUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(cancelOrderInput)
+  }
+);}
+
+
+
+
+
+export const getCancelOrderMutationOptions = <TError = ErrorType<NotFoundResponse | ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelOrder>>, TError,{data: BodyType<CancelOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelOrder>>, TError,{data: BodyType<CancelOrderInput>}, TContext> => {
+
+const mutationKey = ['cancelOrder'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelOrder>>, {data: BodyType<CancelOrderInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  cancelOrder(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelOrderMutationResult = NonNullable<Awaited<ReturnType<typeof cancelOrder>>>
+    export type CancelOrderMutationBody = BodyType<CancelOrderInput>
+    export type CancelOrderMutationError = ErrorType<NotFoundResponse | ErrorResponse>
+
+    /**
+ * @summary Cancel an order before the kitchen starts preparing it
+ */
+export const useCancelOrder = <TError = ErrorType<NotFoundResponse | ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelOrder>>, TError,{data: BodyType<CancelOrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelOrder>>,
+        TError,
+        {data: BodyType<CancelOrderInput>},
+        TContext
+      > => {
+      return useMutation(getCancelOrderMutationOptions(options));
     }
 
 export const getUpdateOrderPaymentUrl = (id: string,) => {

@@ -11,8 +11,8 @@ import {
 const router: IRouter = Router();
 
 const seedMenu: Array<typeof menuItemsTable.$inferInsert> = [
-  {
-    id: "puff-puff",
+    {
+    id: "vegetable-samosa-platter",
     name: "Vegetable Samosa Platter",
     category: "Starters",
     description: "Crisp pastry parcels served with bright herb and chilli dips.",
@@ -295,3 +295,4 @@ router.patch("/menu/:id/availability", async (req, res): Promise<void> => {
 });
 
 export default router;
+

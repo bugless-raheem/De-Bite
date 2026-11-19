@@ -15,6 +15,7 @@ export * from './adminOrderStatus';
 export * from './adminOrderStatusInput';
 export * from './adminOrderStatusInputStatus';
 export * from './adminSession';
+export * from './cancelOrderInput';
 export * from './errorResponse';
 export * from './healthStatus';
 export * from './menuAvailabilityInput';

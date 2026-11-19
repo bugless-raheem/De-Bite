@@ -86,7 +86,7 @@ export const ListOrdersResponseItem = zod.object({
   "deliveryFee": zod.number(),
   "total": zod.number(),
   "paymentConfirmed": zod.boolean(),
-  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'])
+  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'])
 })
 export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
 
@@ -145,7 +145,7 @@ export const CreateOrderResponse = zod.object({
   "deliveryFee": zod.number(),
   "total": zod.number(),
   "paymentConfirmed": zod.boolean(),
-  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'])
+  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'])
 })
 
 
@@ -181,7 +181,43 @@ export const TrackOrderResponse = zod.object({
   "deliveryFee": zod.number(),
   "total": zod.number(),
   "paymentConfirmed": zod.boolean(),
-  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'])
+  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'])
+})
+
+
+/**
+ * @summary Cancel an order before the kitchen starts preparing it
+ */
+export const cancelOrderBodyOrderIdMin = 4;
+
+export const cancelOrderBodyPhoneMin = 7;
+
+
+
+export const CancelOrderBody = zod.object({
+  "orderId": zod.string().min(cancelOrderBodyOrderIdMin),
+  "phone": zod.string().min(cancelOrderBodyPhoneMin)
+})
+
+export const CancelOrderResponse = zod.object({
+  "id": zod.string(),
+  "createdAt": zod.string(),
+  "customerName": zod.string(),
+  "phone": zod.string(),
+  "orderType": zod.enum(['delivery', 'pickup']),
+  "address": zod.string().nullable(),
+  "lines": zod.array(zod.object({
+  "itemId": zod.string(),
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "customizations": zod.record(zod.string(), zod.string())
+})),
+  "subtotal": zod.number(),
+  "deliveryFee": zod.number(),
+  "total": zod.number(),
+  "paymentConfirmed": zod.boolean(),
+  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'])
 })
 
 
@@ -214,7 +250,7 @@ export const UpdateOrderPaymentResponse = zod.object({
   "deliveryFee": zod.number(),
   "total": zod.number(),
   "paymentConfirmed": zod.boolean(),
-  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'])
+  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'])
 })
 
 
@@ -247,7 +283,7 @@ export const UpdateOrderStatusResponse = zod.object({
   "deliveryFee": zod.number(),
   "total": zod.number(),
   "paymentConfirmed": zod.boolean(),
-  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'])
+  "status": zod.enum(['received', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled'])
 })
 
 
@@ -283,7 +319,7 @@ export const ListAdminOrdersResponseItem = zod.object({
   "phone": zod.string(),
   "orderType": zod.string(),
   "total": zod.number(),
-  "status": zod.enum(['received', 'preparing', 'out_for_delivery', 'delivered']),
+  "status": zod.enum(['received', 'preparing', 'out_for_delivery', 'delivered', 'cancelled']),
   "createdAt": zod.string().nullable(),
   "items": zod.array(zod.object({
   "itemName": zod.string(),
@@ -311,7 +347,7 @@ export const UpdateAdminOrderStatusResponse = zod.object({
   "phone": zod.string(),
   "orderType": zod.string(),
   "total": zod.number(),
-  "status": zod.enum(['received', 'preparing', 'out_for_delivery', 'delivered']),
+  "status": zod.enum(['received', 'preparing', 'out_for_delivery', 'delivered', 'cancelled']),
   "createdAt": zod.string().nullable(),
   "items": zod.array(zod.object({
   "itemName": zod.string(),

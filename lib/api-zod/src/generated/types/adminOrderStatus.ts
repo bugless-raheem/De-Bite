@@ -14,4 +14,5 @@ export const AdminOrderStatus = {
   preparing: 'preparing',
   out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
+  cancelled: 'cancelled',
 } as const;

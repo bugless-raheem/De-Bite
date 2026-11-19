@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, ordersTable } from "@workspace/db";
 import {
+  CancelOrderBody,
+  CancelOrderResponse,
   CreateOrderBody,
   CreateOrderResponse,
   ListOrdersResponse,
@@ -59,10 +61,19 @@ function normalizeCustomizations(value: unknown): Record<string, string> {
 
 function normalizeTrackStatus(status: string) {
   if (status === "delivered") return "completed";
-  if (["received", "confirmed", "preparing", "ready", "out_for_delivery", "completed"].includes(status)) {
+  if (["received", "confirmed", "preparing", "ready", "out_for_delivery", "completed", "cancelled"].includes(status)) {
     return status;
   }
   return "received";
+}
+
+const CANCELLABLE_STATUSES = new Set(["received", "confirmed"]);
+
+async function findSupabaseOrderForCancel(orderId: string) {
+  const [order] = await supabaseRequest<SupabaseTrackOrderRow[]>(
+    `orders?select=id,customer_name,phone,order_type,total,status,created_at&id=eq.${encodeURIComponent(orderId)}`,
+  );
+  return order ?? null;
 }
 
 async function findSupabaseOrder(orderId: string, phone: string) {
@@ -159,6 +170,84 @@ router.post("/orders/track", async (req, res): Promise<void> => {
   }
 
   res.json(TrackOrderResponse.parse(supabaseOrder));
+});
+
+router.post("/orders/cancel", async (req, res): Promise<void> => {
+  const parsed = CancelOrderBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { orderId, phone } = parsed.data;
+  const cancellation = { status: "cancelled" as const };
+
+  const [localOrder] = await db
+    .select()
+    .from(ordersTable)
+    .where(and(eq(ordersTable.id, orderId), eq(ordersTable.phone, phone)));
+
+  if (localOrder) {
+    if (!CANCELLABLE_STATUSES.has(localOrder.status)) {
+      res.status(409).json({ error: "This order can no longer be cancelled because preparation has started" });
+      return;
+    }
+    const [updated] = await db
+      .update(ordersTable)
+      .set(cancellation)
+      .where(and(eq(ordersTable.id, orderId), eq(ordersTable.phone, phone), inArray(ordersTable.status, [...CANCELLABLE_STATUSES])))
+      .returning();
+    if (!updated) {
+      res.status(409).json({ error: "This order can no longer be cancelled because preparation has started" });
+      return;
+    }
+    req.log.info({ orderId: updated.id, status: updated.status }, "Order cancelled");
+    res.json(CancelOrderResponse.parse(formatOrder(updated)));
+    return;
+  }
+
+  // Order is not in the local database; try Supabase (same source tracking falls back to).
+  const supabaseOrder = await findSupabaseOrderForCancel(orderId);
+  if (!supabaseOrder || supabaseOrder.phone !== phone) {
+    res.status(404).json({ error: "We could not find an order with those details" });
+    return;
+  }
+  if (!CANCELLABLE_STATUSES.has(supabaseOrder.status)) {
+    res.status(409).json({ error: "This order can no longer be cancelled because preparation has started" });
+    return;
+  }
+
+  const updatedRows = await supabaseRequest<SupabaseTrackOrderRow[]>(
+    `orders?id=eq.${encodeURIComponent(orderId)}&phone=eq.${encodeURIComponent(phone)}&status=in.(received,confirmed)`,
+    {
+      method: "PATCH",
+      prefer: "return=representation",
+      body: JSON.stringify(cancellation),
+    },
+  );
+  if (!updatedRows.length) {
+    res.status(409).json({ error: "This order can no longer be cancelled because preparation has started" });
+    return;
+  }
+
+  const [updated] = updatedRows;
+  req.log.info({ orderId: String(updated.id), status: updated.status }, "Supabase order cancelled");
+  res.json(
+    CancelOrderResponse.parse({
+      id: String(updated.id),
+      createdAt: updated.created_at ?? new Date().toISOString(),
+      customerName: updated.customer_name,
+      phone: updated.phone,
+      orderType: updated.order_type === "pickup" ? "pickup" : "delivery",
+      address: null,
+      lines: [],
+      subtotal: Number(updated.total),
+      deliveryFee: 0,
+      total: Number(updated.total),
+      paymentConfirmed: false,
+      status: "cancelled",
+    }),
+  );
 });
 
 router.patch("/orders/:id/payment", async (req, res): Promise<void> => {

@@ -116,6 +116,32 @@ paths:
                 $ref: "#/components/schemas/Order"
         "404":
           $ref: "#/components/responses/NotFound"
+  /orders/cancel:
+    post:
+      operationId: cancelOrder
+      tags: [orders]
+      summary: Cancel an order before the kitchen starts preparing it
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelOrderInput"
+      responses:
+        "200":
+          description: The cancelled order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Order is no longer cancellable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /orders/{id}/payment:
     patch:
       operationId: updateOrderPayment
@@ -337,6 +363,12 @@ components:
         deliveryFee: { type: number, minimum: 0 }
         total: { type: number, minimum: 0 }
       required: [customerName, phone, orderType, lines, subtotal, deliveryFee, total]
+    CancelOrderInput:
+      type: object
+      properties:
+        orderId: { type: string, minLength: 4 }
+        phone: { type: string, minLength: 7 }
+      required: [orderId, phone]
     TrackOrderInput:
       type: object
       properties:
@@ -376,7 +408,7 @@ components:
         paymentConfirmed: { type: boolean }
         status:
           type: string
-          enum: [received, confirmed, preparing, ready, out_for_delivery, completed]
+          enum: [received, confirmed, preparing, ready, out_for_delivery, completed, cancelled]
       required: [id, createdAt, customerName, phone, orderType, address, lines, subtotal, deliveryFee, total, paymentConfirmed, status]
     OrderLine:
       type: object
@@ -430,7 +462,7 @@ components:
         total: { type: number }
         status:
           type: string
-          enum: [received, preparing, out_for_delivery, delivered]
+          enum: [received, preparing, out_for_delivery, delivered, cancelled]
         createdAt: { type: ["string", "null"] }
         items:
           type: array

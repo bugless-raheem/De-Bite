@@ -75,6 +75,13 @@ export interface OrderInput {
   total: number;
 }
 
+export interface CancelOrderInput {
+  /** @minLength 4 */
+  orderId: string;
+  /** @minLength 7 */
+  phone: string;
+}
+
 export interface TrackOrderInput {
   /** @minLength 4 */
   orderId: string;
@@ -120,6 +127,7 @@ export const OrderStatus = {
   ready: 'ready',
   out_for_delivery: 'out_for_delivery',
   completed: 'completed',
+  cancelled: 'cancelled',
 } as const;
 
 export type OrderLineCustomizations = {[key: string]: string};
@@ -191,6 +199,7 @@ export const AdminOrderStatus = {
   preparing: 'preparing',
   out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
+  cancelled: 'cancelled',
 } as const;
 
 export interface AdminOrder {

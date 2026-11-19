@@ -15,7 +15,7 @@ import { supabaseRequest } from "../lib/supabase";
 const router: IRouter = Router();
 const ADMIN_COOKIE = "debite_admin_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
-const adminStatuses = ["received", "preparing", "out_for_delivery", "delivered"] as const;
+const adminStatuses = ["received", "preparing", "out_for_delivery", "delivered", "cancelled"] as const;
 
 type AdminStatus = (typeof adminStatuses)[number];
 type SupabaseOrderRow = {
@@ -95,6 +95,9 @@ function normalizeStatus(status: string): AdminStatus | null {
 }
 
 function toAdminStatus(status: string): AdminStatus {
+  // Keep 'cancelled' intact so cancelled orders still pass ListAdminOrdersResponse parsing
+  // instead of breaking the whole admin orders list.
+  if (status === "cancelled") return "cancelled";
   if (status === "confirmed" || status === "ready" || status === "preparing") return "preparing";
   if (status === "out_for_delivery") return "out_for_delivery";
   if (status === "completed" || status === "delivered") return "delivered";
